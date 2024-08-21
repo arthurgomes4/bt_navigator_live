@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<package format="3">
+    <name>live_navigator_plugins</name>
+    <version>1.0.0</version>
+    <description>Groot monitored navigator plugins for Nav2</description>
+    <maintainer email="arthurgomes2727@gmail.com">Arthur</maintainer>
+    <license>MIT</license>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+</package>
