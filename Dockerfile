@@ -27,10 +27,11 @@ SHELL ["/bin/bash", "-c"]
 
 RUN mkdir -p /root/ros2_ws/src/live_navigator_plugins
 
-# COPY live_navigator_plugins /root/ros2_ws/src/live_navigator_plugins
+COPY live_navigator_plugins /root/ros2_ws/src/live_navigator_plugins
 
-# RUN source /opt/ros/iron/setup.bash && \
-#     cd /root/ros2_ws && \
-#     colcon build
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    cd /root/ros2_ws && \
+    colcon build
 
-RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc 
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc && \
+    echo "source /root/ros2_ws/install/setup.bash" >> /root/.bashrc
