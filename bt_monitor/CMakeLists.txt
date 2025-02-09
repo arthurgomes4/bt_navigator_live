@@ -25,9 +25,13 @@ find_package(catkin QUIET)
 if(ament_cmake_FOUND)
   find_package(ament_index_cpp REQUIRED)
   find_package(behaviortree_cpp_v3 REQUIRED)
+  find_package(rclcpp REQUIRED)
+  find_package(std_msgs REQUIRED)
 
   set(dependencies
     behaviortree_cpp_v3
+    rclcpp
+    std_msgs
   )
 
   message(STATUS "---------------------")
