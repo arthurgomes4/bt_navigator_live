@@ -19,7 +19,7 @@ elif [ "$1" == "devel" ]; then
     docker run --name bt_navigator_live -it --rm \
         --env="DISPLAY=$DISPLAY" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -v $PWD/live_navigator_plugins:/root/ros2_ws/src/live_navigator_plugins \
+        -v $PWD/bt_monitor:/root/ros2_ws/src/bt_monitor \
         bt_navigator_live bash 
     xhost -local:root
 
