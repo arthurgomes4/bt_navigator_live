@@ -42,19 +42,12 @@ using QtNodes::NodeGraphicsObject;
 using QtNodes::NodeState;
 
 MainWindow::MainWindow(GraphicMode initial_mode,
-                       const QString& monitor_address,
-                       const QString& monitor_pub_port,
-                       const QString& monitor_srv_port,
-                       const bool monitor_autoconnect,
+                       rclcpp::Node::SharedPtr node_ptr, 
                        QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     _current_mode(initial_mode),
-    _current_layout(QtNodes::PortLayout::Vertical),
-    _monitor_address(monitor_address),
-    _monitor_publisher_port(monitor_pub_port),
-    _monitor_server_port(monitor_srv_port),
-    _monitor_autoconnect(monitor_autoconnect)
+    _current_layout(QtNodes::PortLayout::Vertical)
 {
     ui->setupUi(this);
 
@@ -106,8 +99,8 @@ MainWindow::MainWindow(GraphicMode initial_mode,
     ui->leftFrame->layout()->addWidget( _replay_widget );
 
 #ifdef ZMQ_FOUND
-    _monitor_widget = new SidepanelMonitor(
-        this, _monitor_address, _monitor_publisher_port, _monitor_server_port);
+    _monitor_widget = new SidepanelMonitor(this, node_ptr);
+    
     ui->leftFrame->layout()->addWidget( _monitor_widget );
 
     connect( ui->toolButtonConnect, &QToolButton::clicked,
@@ -116,15 +109,15 @@ MainWindow::MainWindow(GraphicMode initial_mode,
     connect( _monitor_widget, &SidepanelMonitor::connectionUpdate,
             this, &MainWindow::onConnectionUpdate );
 
-    if ( monitor_autoconnect )
-    {
-        // If autoconnecting, increase the timeout to get the behavior tree to a
-        // larger value. This only lasts for one "connect" before returning to
-        // its default value.
-        _monitor_widget->set_load_tree_timeout_ms(
-            _monitor_widget->_load_tree_autoconnect_timeout_ms);
-        ui->toolButtonConnect->animateClick();
-    }
+    // if ( monitor_autoconnect )
+    // {
+    //     // If autoconnecting, increase the timeout to get the behavior tree to a
+    //     // larger value. This only lasts for one "connect" before returning to
+    //     // its default value.
+    //     _monitor_widget->set_load_tree_timeout_ms(
+    //         _monitor_widget->_load_tree_autoconnect_timeout_ms);
+    //     ui->toolButtonConnect->animateClick();
+    // }
 #else
     ui->actionMonitor_mode->setVisible(false);
 #endif

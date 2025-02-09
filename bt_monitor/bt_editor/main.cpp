@@ -20,10 +20,10 @@ using QtNodes::ConnectionStyle;
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::Node::SharedPtr bt_monitor_node = std::make_shared<rclcpp::Node>("bt_monitor_node");
+    rclcpp::Node::SharedPtr bt_monitor_node_ptr = std::make_shared<rclcpp::Node>("bt_monitor_node_ptr");
 
     std::thread ros_thread([&]() {
-        rclcpp::spin(bt_monitor_node);
+        rclcpp::spin(bt_monitor_node_ptr);
     });
 
     QApplication app(argc, argv);
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     const bool monitor_autoconnect = false;
 
     // Start the main application in monitor mode
-    MainWindow win(mode, monitor_address, monitor_pub_port, monitor_srv_port, monitor_autoconnect);
+    MainWindow win(mode, bt_monitor_node_ptr);
     win.show();
 
     int result = app.exec();

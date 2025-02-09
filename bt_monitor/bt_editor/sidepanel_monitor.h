@@ -5,6 +5,8 @@
 #include <zmq.hpp>
 
 #include "bt_editor_base.h"
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
 
 namespace Ui {
 class SidepanelMonitor;
@@ -23,9 +25,7 @@ public:
     static constexpr int _load_tree_autoconnect_timeout_ms = 10000;
 
     explicit SidepanelMonitor(QWidget *parent = nullptr,
-                              const QString &address = "",
-                              const QString &publisher_port = "",
-                              const QString &server_port = "");
+                              rclcpp::Node::SharedPtr node_ptr = nullptr);
     ~SidepanelMonitor();
 
     void clear();
@@ -73,6 +73,16 @@ private:
     bool getTreeFromServer();
 
     QWidget *_parent;
+
+    rclcpp::Node::SharedPtr _node_ptr; // Store the node pointer
+
+    // ROS2 subscribers
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr full_bt_subscriber_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr bt_updates_subscriber_;
+
+    // Callback functions
+    void fullBtCallback(const std_msgs::msg::String::SharedPtr msg);
+    void btUpdatesCallback(const std_msgs::msg::String::SharedPtr msg);
 
 };
 

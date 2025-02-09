@@ -19,6 +19,8 @@
 #include "sidepanel_replay.h"
 #include "models/SubtreeNodeModel.hpp"
 
+#include "rclcpp/rclcpp.hpp" 
+
 #ifdef ZMQ_FOUND
 #include "sidepanel_monitor.h"
 #endif
@@ -44,10 +46,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(GraphicMode initial_mode,
-                        const QString& monitor_address = "",
-                        const QString& monitor_pub_port = "",
-                        const QString& monitor_srv_port = "",
-                        const bool monitor_autoconnect = false,
+                        rclcpp::Node::SharedPtr node_ptr,
                         QWidget *parent = nullptr);
     ~MainWindow() override;
 
@@ -211,11 +210,6 @@ private:
 #ifdef ZMQ_FOUND
     SidepanelMonitor* _monitor_widget;
 #endif
-
-    QString _monitor_address;
-    QString _monitor_publisher_port;
-    QString _monitor_server_port;
-    bool _monitor_autoconnect;
 
     MainWindow::SavedState saveCurrentState();
     void clearUndoStacks();

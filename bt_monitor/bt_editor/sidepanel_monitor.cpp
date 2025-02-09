@@ -11,19 +11,22 @@
 #include "utils.h"
 
 SidepanelMonitor::SidepanelMonitor(QWidget *parent,
-                                   const QString &address,
-                                   const QString &publisher_port,
-                                   const QString &server_port) :
+                                   rclcpp::Node::SharedPtr node_ptr) :
     QFrame(parent),
     ui(new Ui::SidepanelMonitor),
     _zmq_context(1),
     _zmq_subscriber(_zmq_context, ZMQ_SUB),
     _connected(false),
     _msg_count(0),
-    _parent(parent)
+    _parent(parent),
+    _node_ptr(node_ptr)
 {
     ui->setupUi(this);
     this->set_load_tree_timeout_ms(_load_tree_default_timeout_ms);
+
+    const QString address = "hardcoded_address";
+    const QString publisher_port = "hardcoded_publisher_port";
+    const QString server_port = "hardcoded_server_port";
 
     if ( !address.isEmpty() )
     {
@@ -38,13 +41,33 @@ SidepanelMonitor::SidepanelMonitor(QWidget *parent,
         ui->lineEdit_server->setText(server_port);
     }
 
+
     _timer = new QTimer(this);
     connect( _timer, &QTimer::timeout, this, &SidepanelMonitor::on_timer );
+
+    // Initialize ROS2 subscribers
+    full_bt_subscriber_ = _node_ptr->create_subscription<std_msgs::msg::String>(
+        "/full_bt", 10, std::bind(&SidepanelMonitor::fullBtCallback, this, std::placeholders::_1));
+
+    bt_updates_subscriber_ = _node_ptr->create_subscription<std_msgs::msg::String>(
+        "/bt_updates", 10, std::bind(&SidepanelMonitor::btUpdatesCallback, this, std::placeholders::_1));
 }
 
 SidepanelMonitor::~SidepanelMonitor()
 {
     delete ui;
+}
+
+void SidepanelMonitor::fullBtCallback(const std_msgs::msg::String::SharedPtr msg)
+{
+    // Handle the /full_bt message
+    RCLCPP_INFO(_node_ptr->get_logger(), "Received /full_bt message: %s", msg->data.c_str());
+}
+
+void SidepanelMonitor::btUpdatesCallback(const std_msgs::msg::String::SharedPtr msg)
+{
+    // Handle the /bt_updates message
+    RCLCPP_INFO(_node_ptr->get_logger(), "Received /bt_updates message: %s", msg->data.c_str());
 }
 
 void SidepanelMonitor::clear()
