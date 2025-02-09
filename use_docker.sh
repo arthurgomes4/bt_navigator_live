@@ -1,11 +1,32 @@
 #!/bin/bash
 
 if [ "$1" == "build" ]; then
+
     docker build -t bt_navigator_live .
+
 elif [ "$1" == "run" ]; then
-    docker run -it --rm --name bt_navigator_live --env="DISPLAY" bt_navigator_live bash
+
+    xhost +local:root
+    docker run --name bt_navigator_live -it --rm  \
+        --env="DISPLAY=$DISPLAY" \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        bt_navigator_live bash
+    xhost -local:root
+
 elif [ "$1" == "devel" ]; then
-    docker run -it --rm --name bt_navigator_live --env="DISPLAY" -v $PWD/live_navigator_plugins:/root/ros2_ws/src/live_navigator_plugins bt_navigator_live bash 
+
+    xhost +local:root
+    docker run --name bt_navigator_live -it --rm \
+        --env="DISPLAY=$DISPLAY" \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -v $PWD/live_navigator_plugins:/root/ros2_ws/src/live_navigator_plugins \
+        bt_navigator_live bash 
+    xhost -local:root
+
+elif [ "$1" == "enter" ]; then
+
+    docker exec -it bt_navigator_live bash
+
 else
     echo "Usage: $0 [build|run|devel]"
 fi
