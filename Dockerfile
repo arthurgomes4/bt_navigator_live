@@ -28,7 +28,11 @@ RUN apt-get update && apt-get install -y \
 
 SHELL ["/bin/bash", "-c"]
 
+# Create workspace directory
 RUN mkdir -p /root/ros2_ws/src/bt_monitor
+
+# Set the working directory
+WORKDIR /root/ros2_ws
 
 # COPY bt_monitor /root/ros2_ws/src/bt_monitor
 
@@ -36,7 +40,10 @@ RUN mkdir -p /root/ros2_ws/src/bt_monitor
 #     cd /root/ros2_ws && \
 #     colcon build
 
-RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc 
+# Source ROS and workspace, and set default directory
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc && \
+    echo "if [ -f /root/ros2_ws/install/setup.bash ]; then source /root/ros2_ws/install/setup.bash; fi" >> /root/.bashrc && \
+    echo "cd /root/ros2_ws" >> /root/.bashrc
 
 # Add alias for Groot executable
 # RUN echo "alias groot='/Groot/build/groot'" >> /root/.bashrc

@@ -186,7 +186,17 @@ target_link_libraries(behavior_tree_editor ${GROOT_DEPENDENCIES} )
 
 
 add_executable(Groot ./bt_editor/main.cpp  ${RESOURCE_FILES})
-target_link_libraries(Groot behavior_tree_editor )
+add_executable(send_full_bt ./src/send_full_bt.cpp)
+add_executable(bt_publisher ./src/bt_publisher.cpp)
+add_executable(test_zmq_publisher ./src/test_zmq_publisher.cpp)
+target_link_libraries(Groot behavior_tree_editor)
+ament_target_dependencies(send_full_bt rclcpp behaviortree_cpp_v3 std_msgs)
+ament_target_dependencies(bt_publisher rclcpp behaviortree_cpp_v3 std_msgs)
+ament_target_dependencies(test_zmq_publisher
+  rclcpp
+  behaviortree_cpp_v3
+  std_msgs
+)
 
 add_subdirectory(test)
 
@@ -215,6 +225,11 @@ endif()
 
 INSTALL(TARGETS behavior_tree_editor LIBRARY DESTINATION ${GROOT_LIB_DESTINATION} )
 INSTALL(TARGETS Groot RUNTIME DESTINATION ${GROOT_BIN_DESTINATION} )
+install(TARGETS
+  send_full_bt
+  bt_publisher
+  test_zmq_publisher
+  DESTINATION lib/${PROJECT_NAME})  
 
 if(ament_cmake_FOUND)
   ament_export_include_directories(include)

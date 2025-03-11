@@ -6,7 +6,7 @@
 
 #include "bt_editor_base.h"
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/byte_multi_array.hpp"
 
 namespace Ui {
 class SidepanelMonitor;
@@ -77,12 +77,12 @@ private:
     rclcpp::Node::SharedPtr _node_ptr; // Store the node pointer
 
     // ROS2 subscribers
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr full_bt_subscriber_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr bt_updates_subscriber_;
+    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr full_bt_subscriber_;
+    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr bt_updates_subscriber_;
 
     // Callback functions
-    void fullBtCallback(const std_msgs::msg::String::SharedPtr msg);
-    void btUpdatesCallback(const std_msgs::msg::String::SharedPtr msg);
+    void fullBtCallback(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
+    void btUpdatesCallback(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
 
 };
 
