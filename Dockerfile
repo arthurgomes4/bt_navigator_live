@@ -34,11 +34,11 @@ RUN mkdir -p /root/ros2_ws/src/bt_monitor
 # Set the working directory
 WORKDIR /root/ros2_ws
 
-# COPY bt_monitor /root/ros2_ws/src/bt_monitor
+COPY bt_monitor /root/ros2_ws/src/bt_monitor
 
-# RUN source /opt/ros/humble/setup.bash && \
-#     cd /root/ros2_ws && \
-#     colcon build
+RUN source /opt/ros/humble/setup.bash && \
+    cd /root/ros2_ws && \
+    colcon build
 
 # Source ROS and workspace, and set default directory
 RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc && \

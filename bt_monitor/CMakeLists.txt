@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.22)
 
 # Update the policy setting to avoid an error when loading the ament_cmake package
 # at the current cmake version level
@@ -78,13 +78,10 @@ endif()
 add_subdirectory( QtNodeEditor )
 
 ##########################################
-# FIX ME in the future....
+# Build configuration
 
-set(BUILD_EXAMPLES   OFF CACHE BOOL "")
-set(BUILD_UNIT_TESTS OFF CACHE BOOL "")
+set(BUILD_EXAMPLES OFF CACHE BOOL "")
 set(BUILD_TOOLS OFF CACHE BOOL "")
-set(BUILD_TESTING OFF CACHE BOOL "")
-set(CATKIN_ENABLE_TESTING OFF CACHE BOOL "")
 
 if(NOT catkin_FOUND AND NOT ament_cmake_FOUND)
 
@@ -94,7 +91,6 @@ if(NOT catkin_FOUND AND NOT ament_cmake_FOUND)
     endif()
 
     SET(BUILD_EXAMPLES OFF CACHE BOOL "Build tutorials and examples" FORCE)
-    SET(BUILD_UNIT_TESTS OFF CACHE BOOL "Build the unit tests" FORCE)
     SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 
     # look for BehaviorTree.CPP as submodule
@@ -130,7 +126,6 @@ set(APP_CPPS
 set(RESOURCE_FILES
     ./bt_editor/resources/icons.qrc
     ./bt_editor/resources/style.qrc
-    ./test_data/test_files.qrc
     )
 
 set(FORMS_UI
@@ -184,7 +179,6 @@ endif()
 
 target_link_libraries(behavior_tree_editor ${GROOT_DEPENDENCIES} )
 
-
 add_executable(Groot ./bt_editor/main.cpp  ${RESOURCE_FILES})
 add_executable(send_full_bt ./src/send_full_bt.cpp)
 add_executable(bt_publisher ./src/bt_publisher.cpp)
@@ -197,8 +191,6 @@ ament_target_dependencies(test_zmq_publisher
   behaviortree_cpp_v3
   std_msgs
 )
-
-add_subdirectory(test)
 
 ######################################################
 # INSTALL
@@ -214,13 +206,6 @@ else()
     set( GROOT_LIB_DESTINATION   lib )
     set( GROOT_INC_DESTINATION   include )
     set( GROOT_BIN_DESTINATION   bin )
-    
-    # INSTALL( FILES ${CMAKE_CURRENT_SOURCE_DIR}/groot_icon.png
-	# 		 DESTINATION share/icons/hicolor/256x256)
-			 
-	# INSTALL( FILES ${CMAKE_CURRENT_SOURCE_DIR}/Groot.desktop
-	# 		 DESTINATION share/applications)
-    
 endif()
 
 INSTALL(TARGETS behavior_tree_editor LIBRARY DESTINATION ${GROOT_LIB_DESTINATION} )
