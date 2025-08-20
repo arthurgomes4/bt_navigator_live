@@ -116,12 +116,18 @@ bool AbsBehaviorTree::operator ==(const AbsBehaviorTree &other) const
 
 GraphicMode getGraphicModeFromString(const QString& str)
 {
-    return GraphicMode::MONITOR;
+    if( str == "EDITOR") return GraphicMode::EDITOR;
+    if( str == "MONITOR") return GraphicMode::MONITOR;
+    if( str == "REPLAY") return GraphicMode::REPLAY;
+    return GraphicMode::EDITOR;
 }
 
 const char *toStr(GraphicMode type)
 {
-    return "MONITOR";
+    if( type == GraphicMode::EDITOR) return "EDITOR";
+    if( type == GraphicMode::MONITOR) return "MONITOR";
+    if( type == GraphicMode::REPLAY) return "REPLAY";
+    return "EDITOR";
 }
 
 

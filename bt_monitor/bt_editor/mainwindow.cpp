@@ -92,7 +92,6 @@ MainWindow::MainWindow(GraphicMode initial_mode,
     }
     //------------------------------------------------------
 
-#ifdef ZMQ_FOUND
     _monitor_widget = new SidepanelMonitor(this, node_ptr);
     
     ui->leftFrame->layout()->addWidget( _monitor_widget );
@@ -102,9 +101,20 @@ MainWindow::MainWindow(GraphicMode initial_mode,
 
     connect( _monitor_widget, &SidepanelMonitor::connectionUpdate,
             this, &MainWindow::onConnectionUpdate );
-#else
-    ui->actionMonitor_mode->setVisible(false);
-#endif
+
+    connect( _monitor_widget, &SidepanelMonitor::addNewModel,
+            this, &MainWindow::onAddToModelRegistry);
+
+    connect( _monitor_widget, &SidepanelMonitor::changeNodeStyle,
+            this, &MainWindow::onChangeNodesStatus);
+
+    auto createSingleTabBehaviorTree = [this](const AbsBehaviorTree &tree, const QString &bt_name)
+    {
+      onCreateAbsBehaviorTree(tree, bt_name, false);
+    };
+
+    connect( _monitor_widget, &SidepanelMonitor::loadBehaviorTree,
+            this, createSingleTabBehaviorTree );
 
     updateCurrentMode();
 
@@ -125,28 +135,6 @@ MainWindow::MainWindow(GraphicMode initial_mode,
     connect( redo_shortcut, &QShortcut::activated, this, &MainWindow::onRedoInvoked );
 
     QShortcut* save_shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), this);
-
-#ifdef ZMQ_FOUND
-    connect( ui->toolButtonConnect, &QToolButton::clicked,
-            _monitor_widget, &SidepanelMonitor::on_Connect );
-
-    connect( _monitor_widget, &SidepanelMonitor::connectionUpdate,
-            this, &MainWindow::onConnectionUpdate );
-
-    connect( _monitor_widget, &SidepanelMonitor::addNewModel,
-            this, &MainWindow::onAddToModelRegistry);
-
-    connect( _monitor_widget, &SidepanelMonitor::changeNodeStyle,
-            this, &MainWindow::onChangeNodesStatus);
-
-    auto createSingleTabBehaviorTree = [this](const AbsBehaviorTree &tree, const QString &bt_name)
-    {
-      onCreateAbsBehaviorTree(tree, bt_name, false);
-    };
-
-    connect( _monitor_widget, &SidepanelMonitor::loadBehaviorTree,
-            this, createSingleTabBehaviorTree );
-#endif
 
     ui->tabWidget->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
     connect( ui->tabWidget->tabBar(), &QTabBar::customContextMenuRequested,
@@ -1163,31 +1151,60 @@ void MainWindow::onActionClearTriggered(bool create_new)
         createTab("BehaviorTree");
     }
 
-#ifdef ZMQ_FOUND
     _monitor_widget->clear();
-#endif
 
 }
 
 
 void MainWindow::updateCurrentMode()
 {
-#ifdef ZMQ_FOUND
-    _monitor_widget->setHidden(false);
-#endif
-
-    // Hide editor/replay buttons since we're monitor-only
-    ui->toolButtonLoadFile->setHidden(true);
-    ui->toolButtonSaveFile->setHidden(true);
-    ui->toolButtonReorder->setHidden(true);
-    ui->toolButtonSaveSvg->setHidden(true);
-    ui->toolButtonLoadRemote->setHidden(true);
-    
-    // Show monitor button
-    ui->toolButtonConnect->setHidden(false);
-    
-    // Lock editing since we're monitor-only
-    lockEditing(true);
+    if (_current_mode == GraphicMode::MONITOR) {
+        // Show monitor widget
+        _monitor_widget->setHidden(false);
+        
+        // Hide editor/replay buttons since we're monitor-only
+        ui->toolButtonLoadFile->setHidden(true);
+        ui->toolButtonSaveFile->setHidden(true);
+        ui->toolButtonReorder->setHidden(true);
+        ui->toolButtonSaveSvg->setHidden(true);
+        ui->toolButtonLoadRemote->setHidden(true);
+        
+        // Show monitor button
+        ui->toolButtonConnect->setHidden(false);
+        
+        // Lock editing since we're monitor-only
+        lockEditing(true);
+    } else if (_current_mode == GraphicMode::EDITOR) {
+        // Hide monitor widget in editor mode
+        _monitor_widget->setHidden(true);
+        
+        // Show editor buttons
+        ui->toolButtonLoadFile->setHidden(false);
+        ui->toolButtonSaveFile->setHidden(false);
+        ui->toolButtonReorder->setHidden(false);
+        ui->toolButtonSaveSvg->setHidden(false);
+        ui->toolButtonLoadRemote->setHidden(false);
+        
+        // Hide monitor button
+        ui->toolButtonConnect->setHidden(true);
+        
+        // Enable editing
+        lockEditing(false);
+    } else if (_current_mode == GraphicMode::REPLAY) {
+        // Hide monitor widget in replay mode
+        _monitor_widget->setHidden(true);
+        
+        // Configure for replay mode
+        ui->toolButtonLoadFile->setHidden(false);
+        ui->toolButtonSaveFile->setHidden(true);
+        ui->toolButtonReorder->setHidden(true);
+        ui->toolButtonSaveSvg->setHidden(false);
+        ui->toolButtonLoadRemote->setHidden(true);
+        ui->toolButtonConnect->setHidden(true);
+        
+        // Lock editing for replay
+        lockEditing(true);
+    }
 }
 
 

@@ -17,11 +17,8 @@
 #include "XML_utilities.hpp"
 #include "models/SubtreeNodeModel.hpp"
 
-#include "rclcpp/rclcpp.hpp" 
-
-#ifdef ZMQ_FOUND
+#include "rclcpp/rclcpp.hpp"
 #include "sidepanel_monitor.h"
-#endif
 
 namespace Ui {
 class MainWindow;
@@ -197,9 +194,7 @@ private:
 
     QString _main_tree;
 
-#ifdef ZMQ_FOUND
     SidepanelMonitor* _monitor_widget;
-#endif
 
     MainWindow::SavedState saveCurrentState();
     void clearUndoStacks();

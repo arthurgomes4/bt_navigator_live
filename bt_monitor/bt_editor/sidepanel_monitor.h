@@ -2,7 +2,6 @@
 #define SIDEPANEL_MONITOR_H
 
 #include <QFrame>
-#include <zmq.hpp>
 
 #include "bt_editor_base.h"
 #include "rclcpp/rclcpp.hpp"
@@ -55,9 +54,6 @@ signals:
 
 private:
     Ui::SidepanelMonitor *ui;
-
-    zmq::context_t _zmq_context;
-    zmq::socket_t  _zmq_subscriber;
 
     QTimer* _timer;
 

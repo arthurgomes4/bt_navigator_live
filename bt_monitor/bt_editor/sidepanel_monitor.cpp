@@ -14,8 +14,6 @@ SidepanelMonitor::SidepanelMonitor(QWidget *parent,
                                    rclcpp::Node::SharedPtr node_ptr) :
     QFrame(parent),
     ui(new Ui::SidepanelMonitor),
-    _zmq_context(1),
-    _zmq_subscriber(_zmq_context, ZMQ_SUB),
     _connected(false),
     _msg_count(0),
     _parent(parent),
@@ -186,163 +184,16 @@ void SidepanelMonitor::clear()
 void SidepanelMonitor::on_timer()
 {
     if( !_connected ) return;
-
-    zmq::message_t msg;
-    try{
-        while(  _zmq_subscriber.recv(msg) )
-        {
-            _msg_count++;
-            ui->labelCount->setText( QString("Messages received: %1").arg(_msg_count) );
-
-            const char* buffer = reinterpret_cast<const char*>(msg.data());
-
-            const uint32_t header_size = flatbuffers::ReadScalar<uint32_t>( buffer );
-            const uint32_t num_transitions = flatbuffers::ReadScalar<uint32_t>( &buffer[4+header_size] );
-
-            std::vector<std::pair<int, NodeStatus>> node_status;
-            // check uid in the index, if failed load tree from server
-            try{
-                for(size_t offset = 4; offset < header_size +4; offset +=3 )
-                {
-                    const uint16_t uid = flatbuffers::ReadScalar<uint16_t>(&buffer[offset]);
-                    _uid_to_index.at(uid);
-                }
-
-                for(size_t t=0; t < num_transitions; t++)
-                {
-                    size_t offset = 8 + header_size + 12*t;
-                    const uint16_t uid = flatbuffers::ReadScalar<uint16_t>(&buffer[offset+8]);
-                    _uid_to_index.at(uid);
-                }
-
-                for(size_t offset = 4; offset < header_size +4; offset +=3 )
-                {
-                    const uint16_t uid = flatbuffers::ReadScalar<uint16_t>(&buffer[offset]);
-                    const uint16_t index = _uid_to_index.at(uid);
-                    AbstractTreeNode* node = _loaded_tree.node( index );
-                    node->status = convert(flatbuffers::ReadScalar<Serialization::NodeStatus>(&buffer[offset+2] ));
-                }
-
-                //qDebug() << "--------";
-                for(size_t t=0; t < num_transitions; t++)
-                {
-                    size_t offset = 8 + header_size + 12*t;
-
-                    // const double t_sec  = flatbuffers::ReadScalar<uint32_t>( &buffer[offset] );
-                    // const double t_usec = flatbuffers::ReadScalar<uint32_t>( &buffer[offset+4] );
-                    // double timestamp = t_sec + t_usec* 0.000001;
-                    const uint16_t uid = flatbuffers::ReadScalar<uint16_t>(&buffer[offset+8]);
-                    const uint16_t index = _uid_to_index.at(uid);
-                    // NodeStatus prev_status = convert(flatbuffers::ReadScalar<Serialization::NodeStatus>(&buffer[index+10] ));
-                    NodeStatus status  = convert(flatbuffers::ReadScalar<Serialization::NodeStatus>(&buffer[offset+11] ));
-
-                    _loaded_tree.node(index)->status = status;
-                    node_status.push_back( {index, status} );
-
-                }
-            }
-            catch( std::out_of_range& err) {
-                qDebug() << "Reload tree from server";
-                if( !getTreeFromServer() ) {
-                    _connected = false;
-                    ui->lineEdit_address->setDisabled(false);
-                    _timer->stop();
-                    connectionUpdate(false);
-                    return;
-                }
-            }
-
-            // update the graphic part
-            emit changeNodeStyle( "BehaviorTree", node_status );
-
-            // lock editing of nodes
-            auto main_win = dynamic_cast<MainWindow*>( _parent );
-            main_win->lockEditing(true);
-        }
-    }
-    catch( zmq::error_t& err)
-    {
-        qDebug() << "ZMQ receive failed: " << err.what();
-    }
+    
+    // Timer is just for UI updates now, since ROS2 callbacks handle the data
+    // The actual data processing happens in the ROS2 callbacks
 }
 
 bool SidepanelMonitor::getTreeFromServer()
 {
-    try{
-        zmq::message_t request(0);
-        zmq::message_t reply;
-
-        zmq::socket_t  zmq_client( _zmq_context, ZMQ_REQ );
-        zmq_client.connect( _connection_address_req.c_str() );
-
-        zmq_client.setsockopt(ZMQ_RCVTIMEO, &_load_tree_timeout_ms, sizeof(int) );
-
-        zmq_client.send(request, zmq::send_flags::none);
-
-        auto bytes_received  = zmq_client.recv(reply, zmq::recv_flags::none);
-        if( !bytes_received || *bytes_received == 0 )
-        {
-            return false;
-        }
-
-        // std::cout << "Reply data: ";
-        // for (size_t i = 0; i < reply.size(); ++i) {
-        //     std::cout << "{ ";
-        //     for (size_t i = 0; i < reply.size(); ++i) {
-        //         std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(reinterpret_cast<const unsigned char*>(reply.data())[i]);
-        //         if (i != reply.size() - 1) {
-        //             std::cout << ", ";
-        //         }
-        //     }
-        //     std::cout << " }";
-        // }
-        // std::cout << std::dec << std::endl;
-
-        const char* buffer = reinterpret_cast<const char*>(reply.data());
-
-        auto fb_behavior_tree = Serialization::GetBehaviorTree( buffer );
-
-        auto res_pair = BuildTreeFromFlatbuffers( fb_behavior_tree );
-
-        _loaded_tree  = std::move( res_pair.first );
-        _uid_to_index = std::move( res_pair.second );
-
-        // add new models to registry
-        for(const auto& tree_node: _loaded_tree.nodes())
-        {
-            const auto& registration_ID = tree_node.model.registration_ID;
-            if( BuiltinNodeModels().count(registration_ID) == 0)
-            {
-                addNewModel( tree_node.model );
-            }
-        }
-
-        try {
-            loadBehaviorTree( _loaded_tree, "BehaviorTree" );
-        }
-        catch (std::exception& err) {
-            QMessageBox messageBox;
-            messageBox.critical(this,"Error Connecting to remote server", err.what() );
-            messageBox.show();
-            return false;
-        }
-
-        std::vector<std::pair<int, NodeStatus>> node_status;
-        node_status.reserve(_loaded_tree.nodesCount());
-
-        //  qDebug() << "--------";
-
-        for(size_t t=0; t < _loaded_tree.nodesCount(); t++)
-        {
-            node_status.push_back( { t, _loaded_tree.nodes()[t].status } );
-        }
-        emit changeNodeStyle( "BehaviorTree", node_status );
-    }
-    catch( zmq::error_t& err)
-    {
-        qDebug() << "ZMQ client receive failed: " << err.what();
-        return false;
-    }
+    // Since we're using ROS2 topics, we don't need to actively request trees
+    // The tree will be received via the /full_bt topic callback
+    qDebug() << "[SidepanelMonitor] Waiting for behavior tree from ROS2 topic /full_bt";
     return true;
 }
 
@@ -371,36 +222,9 @@ void SidepanelMonitor::on_Connect()
           ui->lineEdit_server->setText(publisher_port);
         }
 
+        // For ROS2 mode, we don't need address/port configuration
+        // ROS2 topics handle the communication
         bool failed = false;
-        if( !address.isEmpty() )
-        {
-            _connection_address_pub = "tcp://" + address.toStdString() + ":" + publisher_port.toStdString();
-            _connection_address_req = "tcp://" + address.toStdString() + ":" + server_port.toStdString();
-
-            try{
-                _zmq_subscriber.connect( _connection_address_pub.c_str() );
-
-                int timeout_ms = 1;
-                _zmq_subscriber.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-                _zmq_subscriber.setsockopt(ZMQ_RCVTIMEO, &timeout_ms, sizeof(int) );
-
-                if( !getTreeFromServer() )
-                {
-                    failed = true;
-                    _connected = false;
-                }
-                // After we try get a tree on connect, reset to the default timeout.
-                // This is done so that we only use the increased autoconnect timeout once.
-                this->set_load_tree_timeout_ms(_load_tree_default_timeout_ms);
-            }
-            catch(zmq::error_t& err)
-            {
-                failed = true;
-            }
-        }
-        else {
-            failed = true;
-        }
 
         if( !failed )
         {
@@ -409,11 +233,13 @@ void SidepanelMonitor::on_Connect()
             ui->lineEdit_publisher->setDisabled(true);
             _timer->start(_timer_period_ms);
             connectionUpdate(true);
+            
+            qDebug() << "[SidepanelMonitor] Connected - listening for ROS2 topics /full_bt and /bt_updates";
         }
         else{
             QMessageBox::warning(this,
-                                 tr("ZeroMQ connection"),
-                                 tr("Was not able to connect to [%1]\n").arg(_connection_address_pub.c_str()),
+                                 tr("ROS2 connection"),
+                                 tr("Unable to start ROS2 monitoring"),
                                  QMessageBox::Close);
         }
     }
@@ -424,5 +250,6 @@ void SidepanelMonitor::on_Connect()
         _timer->stop();
 
         connectionUpdate(false);
+        qDebug() << "[SidepanelMonitor] Disconnected from ROS2 monitoring";
     }
 }

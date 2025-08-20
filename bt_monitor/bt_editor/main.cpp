@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
     QString style(styleFile.readAll());
     app.setStyleSheet(style);
 
-    // Start the main application in monitor mode
-    MainWindow win(GraphicMode::MONITOR, bt_monitor_node_ptr);
+    // Start the main application in editor mode
+    MainWindow win(GraphicMode::EDITOR, bt_monitor_node_ptr);
     win.show();
 
     int result = app.exec();

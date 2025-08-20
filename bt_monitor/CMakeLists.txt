@@ -16,8 +16,6 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL Xml Svg REQUIRED)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
 # Set C++ standard
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)
     set(CMAKE_CXX_STANDARD 11)
@@ -58,6 +56,7 @@ set(APP_CPPS
     ./bt_editor/bt_editor_base.cpp
     ./bt_editor/graphic_container.cpp
     ./bt_editor/XML_utilities.cpp
+    ./bt_editor/sidepanel_monitor.cpp
 )
 
 # Resource files
@@ -70,18 +69,8 @@ set(RESOURCE_FILES
 set(FORMS_UI
     ./bt_editor/about_dialog.ui
     ./bt_editor/mainwindow.ui
+    ./bt_editor/sidepanel_monitor.ui
 )
-
-# Optional ZMQ support for monitoring
-find_package(ZMQ)
-if(ZMQ_FOUND)
-    message(STATUS "ZeroMQ found.")
-    add_definitions(-DZMQ_FOUND)
-    set(APP_CPPS ${APP_CPPS} ./bt_editor/sidepanel_monitor.cpp)
-    set(FORMS_UI ${FORMS_UI} ./bt_editor/sidepanel_monitor.ui)
-else()
-    message(WARNING "ZeroMQ NOT found. Real-time monitoring disabled.")
-endif()
 
 # Wrap UI files
 QT5_WRAP_UI(FORMS_HEADERS ${FORMS_UI})
@@ -102,16 +91,6 @@ SET(GROOT_DEPENDENCIES QtNodeEditor ncurses ncursesw tinfo)
 # Add ament dependencies
 ament_target_dependencies(behavior_tree_monitor ${dependencies})
 ament_target_dependencies(ros2_topic_logger ${dependencies})
-
-# Add ZMQ dependencies if found
-if(ZMQ_FOUND)
-    if(APPLE)
-        find_package(cppzmq)
-        SET(GROOT_DEPENDENCIES ${GROOT_DEPENDENCIES} cppzmq)
-    else()
-        SET(GROOT_DEPENDENCIES ${GROOT_DEPENDENCIES} zmq)
-    endif()
-endif()
 
 # Link libraries
 target_link_libraries(behavior_tree_monitor ${GROOT_DEPENDENCIES})
