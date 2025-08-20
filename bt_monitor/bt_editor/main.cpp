@@ -7,10 +7,10 @@
 
 #include "mainwindow.h"
 #include "XML_utilities.hpp"
-#include "startup_dialog.h"
 #include "models/RootNodeModel.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include <thread>
 
 using QtNodes::DataModelRegistry;
 using QtNodes::FlowViewStyle;
@@ -39,17 +39,8 @@ int main(int argc, char *argv[])
     QString style(styleFile.readAll());
     app.setStyleSheet(style);
 
-    // Set the mode to MONITOR
-    auto mode = GraphicMode::MONITOR;
-
-    // Default monitor options
-    const QString monitor_address = "localhost";
-    const QString monitor_pub_port = "1666";
-    const QString monitor_srv_port = "1667";
-    const bool monitor_autoconnect = false;
-
     // Start the main application in monitor mode
-    MainWindow win(mode, bt_monitor_node_ptr);
+    MainWindow win(GraphicMode::MONITOR, bt_monitor_node_ptr);
     win.show();
 
     int result = app.exec();

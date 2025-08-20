@@ -92,12 +92,6 @@ MainWindow::MainWindow(GraphicMode initial_mode,
     }
     //------------------------------------------------------
 
-    _editor_widget = new SidepanelEditor(_model_registry.get(), _treenode_models, this);
-    _replay_widget = new SidepanelReplay(this);
-
-    ui->leftFrame->layout()->addWidget( _editor_widget );
-    ui->leftFrame->layout()->addWidget( _replay_widget );
-
 #ifdef ZMQ_FOUND
     _monitor_widget = new SidepanelMonitor(this, node_ptr);
     
@@ -108,16 +102,6 @@ MainWindow::MainWindow(GraphicMode initial_mode,
 
     connect( _monitor_widget, &SidepanelMonitor::connectionUpdate,
             this, &MainWindow::onConnectionUpdate );
-
-    // if ( monitor_autoconnect )
-    // {
-    //     // If autoconnecting, increase the timeout to get the behavior tree to a
-    //     // larger value. This only lasts for one "connect" before returning to
-    //     // its default value.
-    //     _monitor_widget->set_load_tree_timeout_ms(
-    //         _monitor_widget->_load_tree_autoconnect_timeout_ms);
-    //     ui->toolButtonConnect->animateClick();
-    // }
 #else
     ui->actionMonitor_mode->setVisible(false);
 #endif
@@ -142,71 +126,23 @@ MainWindow::MainWindow(GraphicMode initial_mode,
 
     QShortcut* save_shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), this);
 
-    connect( _editor_widget, &SidepanelEditor::nodeModelEdited,
-            this, &MainWindow::onTreeNodeEdited);
-
-    connect( _editor_widget, &SidepanelEditor::addNewModel,
-            this, &MainWindow::onAddToModelRegistry);
-
-    connect( _editor_widget, &SidepanelEditor::destroySubtree,
-            this, &MainWindow::onDestroySubTree);
-
-    connect( _editor_widget, &SidepanelEditor::modelRemoveRequested,
-            this, &MainWindow::onModelRemoveRequested);
-
-    connect( _editor_widget, &SidepanelEditor::addSubtree,
-             this, [this](QString ID)
-    {
-        this->createTab(ID);
-    });
-
-    connect(_editor_widget, &SidepanelEditor::setTabScope,
-            this, &MainWindow::onSubtreeSelected);
-
-    connect( _editor_widget, &SidepanelEditor::renameSubtree,
-             this, [this](QString prev_ID, QString new_ID)
-    {
-        if (prev_ID == new_ID)
-            return;
-
-        for (int index = 0; index < ui->tabWidget->count(); index++)
-        {
-            if( ui->tabWidget->tabText(index) == prev_ID)
-            {
-                ui->tabWidget->setTabText(index, new_ID);
-                _tab_info.insert( {new_ID, _tab_info.at(prev_ID)}  );
-                _tab_info.erase( prev_ID );
-                break;
-            }
-        }
-    });
-
-    auto createSingleTabBehaviorTree = [this](const AbsBehaviorTree &tree, const QString &bt_name)
-    {
-      onCreateAbsBehaviorTree(tree, bt_name, false);
-    };
-
-    connect( _replay_widget, &SidepanelReplay::loadBehaviorTree,
-            this, createSingleTabBehaviorTree);
-
-    connect( _replay_widget, &SidepanelReplay::addNewModel,
-            this, &MainWindow::onAddToModelRegistry);
-
-    connect( ui->toolButtonSaveFile, &QToolButton::clicked,
-            this, &MainWindow::on_actionSave_triggered );
-
-    connect( save_shortcut, &QShortcut::activated, this, &MainWindow::on_actionSave_triggered );
-
-    connect( _replay_widget, &SidepanelReplay::changeNodeStyle,
-            this, &MainWindow::onChangeNodesStatus);
-
 #ifdef ZMQ_FOUND
+    connect( ui->toolButtonConnect, &QToolButton::clicked,
+            _monitor_widget, &SidepanelMonitor::on_Connect );
+
+    connect( _monitor_widget, &SidepanelMonitor::connectionUpdate,
+            this, &MainWindow::onConnectionUpdate );
 
     connect( _monitor_widget, &SidepanelMonitor::addNewModel,
             this, &MainWindow::onAddToModelRegistry);
 
     connect( _monitor_widget, &SidepanelMonitor::changeNodeStyle,
             this, &MainWindow::onChangeNodesStatus);
+
+    auto createSingleTabBehaviorTree = [this](const AbsBehaviorTree &tree, const QString &bt_name)
+    {
+      onCreateAbsBehaviorTree(tree, bt_name, false);
+    };
 
     connect( _monitor_widget, &SidepanelMonitor::loadBehaviorTree,
             this, createSingleTabBehaviorTree );
@@ -346,8 +282,6 @@ void MainWindow::loadFromXML(const QString& xml_text)
             onAddToModelRegistry( model.second );
         }
 
-        _editor_widget->updateTreeView();
-
         onActionClearTriggered(false);
 
         const QSignalBlocker blocker( currentTabInfo() );
@@ -420,37 +354,18 @@ void MainWindow::loadFromXML(const QString& xml_text)
 }
 
 
+
+
 void MainWindow::on_actionLoad_triggered()
 {
-    QSettings settings;
-    QString directory_path  = settings.value("MainWindow.lastLoadDirectory",
-                                            QDir::homePath() ).toString();
+    // Disabled in monitor mode
+    return;
+}
 
-    QString fileName = QFileDialog::getOpenFileName(this,
-                                                    tr("Load BehaviorTree from file"), directory_path,
-                                                    tr("BehaviorTree files (*.xml)"));
-    if (!QFileInfo::exists(fileName)){
-        return;
-    }
-
-    QFile file(fileName);
-
-    if (!file.open(QIODevice::ReadOnly)){
-        return;
-    }
-
-    directory_path = QFileInfo(fileName).absolutePath();
-    settings.setValue("MainWindow.lastLoadDirectory", directory_path);
-    settings.sync();
-
-    QString xml_text;
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        xml_text += in.readLine();
-    }
-
-    loadFromXML(xml_text);
+void MainWindow::on_actionSave_triggered()
+{
+    // Disabled in monitor mode
+    return;
 }
 
 QString MainWindow::saveToXML() const
@@ -626,54 +541,12 @@ void MainWindow::recursivelySaveNodeCanonically(QXmlStreamWriter &stream, const 
   }
 }
 
-void MainWindow::on_actionSave_triggered()
-{
-    for (auto& it: _tab_info)
-    {
-        auto& container = it.second;
-        if( !container->containsValidTree() )
-        {
-            QMessageBox::warning(this, tr("Oops!"),
-                                 tr("Malformed behavior tree. File can not be saved"),
-                                 QMessageBox::Cancel);
-            return;
-        }
-    }
 
-    if( _tab_info.size() == 1 )
-    {
-        _main_tree = _tab_info.begin()->first;
-    }
-
-    QSettings settings;
-    QString directory_path  = settings.value("MainWindow.lastSaveDirectory",
-                                            QDir::currentPath() ).toString();
-
-    auto fileName = QFileDialog::getSaveFileName(this, "Save BehaviorTree to file",
-                                                 directory_path, "BehaviorTree files (*.xml)");
-    if (fileName.isEmpty()){
-        return;
-    }
-    if (!fileName.endsWith(".xml"))
-    {
-        fileName += ".xml";
-    }
-
-    QString xml_text = saveToXML();
-
-    QFile file(fileName);
-    if (file.open(QIODevice::WriteOnly)) {
-        QTextStream stream(&file);
-        stream << xml_text;
-    }
-
-    directory_path = QFileInfo(fileName).absolutePath();
-    settings.setValue("MainWindow.lastSaveDirectory", directory_path);
-}
 
 void MainWindow::onAutoArrange()
 {
-    currentTabInfo()->nodeReorder();
+    // Disabled in monitor mode
+    return;
 }
 
 void MainWindow::onSaveSvg()
@@ -716,7 +589,7 @@ void MainWindow::onSceneChanged()
     ui->labelSemaphore->setPixmap(pix);
     ui->labelSemaphore->setScaledContents(true);
 
-    lockEditing( _current_mode != GraphicMode::EDITOR );
+    lockEditing( true ); // Always locked in monitor mode
 }
 
 
@@ -819,7 +692,7 @@ void MainWindow::onPushUndo()
 
 void MainWindow::onUndoInvoked()
 {
-    if ( _current_mode != GraphicMode::EDITOR ) return; //locked
+    return; // Undo disabled in monitor mode
 
     if( _undo_stack.size() > 0)
     {
@@ -835,7 +708,7 @@ void MainWindow::onUndoInvoked()
 
 void MainWindow::onRedoInvoked()
 {
-    if ( _current_mode != GraphicMode::EDITOR ) return; //locked
+    return; // Redo disabled in monitor mode
 
     if( _redo_stack.size() > 0)
     {
@@ -950,7 +823,6 @@ void MainWindow::onAddToModelRegistry(const NodeModel &model)
     _model_registry->registerModel( QString::fromStdString( toStr(model.type)), node_creator, ID);
 
     _treenode_models.insert( {ID, model } );
-    _editor_widget->updateTreeView();
 }
 
 void MainWindow::onDestroySubTree(const QString &ID)
@@ -1034,7 +906,6 @@ void MainWindow::onModelRemoveRequested(QString ID)
 
     if( !node_found )
     {
-        _editor_widget->onRemoveModel(ID);
         return;
     }
 
@@ -1069,7 +940,6 @@ void MainWindow::onModelRemoveRequested(QString ID)
 
         if(ret == QMessageBox::Yes )
         {
-            _editor_widget->onRemoveModel(ID);
             clearUndoStacks();
         }
     }
@@ -1079,7 +949,7 @@ QtNodes::Node* MainWindow::subTreeExpand(GraphicContainer &container,
                                          QtNodes::Node &node,
                                          MainWindow::SubtreeExpandOption option)
 {
-    bool is_editor_mode = (_current_mode == GraphicMode::EDITOR);
+    bool is_editor_mode = false; // Always false in monitor mode
     const QSignalBlocker blocker( this );
     auto subtree_model = dynamic_cast<SubtreeNodeModel*>(node.nodeDataModel());
     const QString& subtree_name = subtree_model->registrationName();
@@ -1223,8 +1093,8 @@ void MainWindow::onCreateAbsBehaviorTree(const AbsBehaviorTree &tree,
 
 void MainWindow::on_actionClear_triggered()
 {
-    onActionClearTriggered(true);
-    clearTreeModels();
+    // Disabled in monitor mode
+    return;
     clearUndoStacks();
 }
 
@@ -1293,8 +1163,6 @@ void MainWindow::onActionClearTriggered(bool create_new)
         createTab("BehaviorTree");
     }
 
-    _editor_widget->clear();
-    _replay_widget->clear();
 #ifdef ZMQ_FOUND
     _monitor_widget->clear();
 #endif
@@ -1304,57 +1172,22 @@ void MainWindow::onActionClearTriggered(bool create_new)
 
 void MainWindow::updateCurrentMode()
 {
-    const bool NOT_EDITOR = _current_mode != GraphicMode::EDITOR;
-
-    _editor_widget->setHidden( NOT_EDITOR );
-    _replay_widget->setHidden( _current_mode != GraphicMode::REPLAY );
 #ifdef ZMQ_FOUND
-    _monitor_widget->setHidden( _current_mode != GraphicMode::MONITOR );
+    _monitor_widget->setHidden(false);
 #endif
 
-    ui->toolButtonLoadFile->setHidden( _current_mode == GraphicMode::MONITOR );
-    ui->toolButtonConnect->setHidden( _current_mode != GraphicMode::MONITOR );
-
-    if( _current_mode == GraphicMode::EDITOR )
-    {
-        ui->toolButtonLoadFile->setText("Load Tree");
-    }
-    else if( _current_mode == GraphicMode::REPLAY )
-    {
-        ui->toolButtonLoadFile->setText("Load Log");
-    }
-
-    ui->toolButtonLoadRemote->setHidden( true );
-
-    ui->toolButtonSaveFile->setHidden( NOT_EDITOR );
-    ui->toolButtonReorder->setHidden( NOT_EDITOR );
-    ui->toolButtonSaveSvg->setHidden( NOT_EDITOR );
-
-    if( _current_mode == GraphicMode::EDITOR )
-    {
-        connect( ui->toolButtonLoadFile, &QToolButton::clicked,
-                this, &MainWindow::on_actionLoad_triggered );
-        disconnect( ui->toolButtonLoadFile, &QToolButton::clicked,
-                   _replay_widget, &SidepanelReplay::on_LoadLog );
-    }
-    else if( _current_mode == GraphicMode::REPLAY )
-    {
-        disconnect( ui->toolButtonLoadFile, &QToolButton::clicked,
-                   this, &MainWindow::on_actionLoad_triggered );
-        connect( ui->toolButtonLoadFile, &QToolButton::clicked,
-                _replay_widget, &SidepanelReplay::on_LoadLog );
-    }
-    lockEditing( NOT_EDITOR );
-
-    if( _current_mode == GraphicMode::EDITOR)
-    {
-        _editor_widget->updateTreeView();
-    }
-    ui->actionEditor_mode->setEnabled( _current_mode != GraphicMode::EDITOR);
-#ifdef ZMQ_FOUND
-    ui->actionMonitor_mode->setEnabled( _current_mode != GraphicMode::MONITOR);
-#endif
-    ui->actionReplay_mode->setEnabled( _current_mode != GraphicMode::REPLAY);
+    // Hide editor/replay buttons since we're monitor-only
+    ui->toolButtonLoadFile->setHidden(true);
+    ui->toolButtonSaveFile->setHidden(true);
+    ui->toolButtonReorder->setHidden(true);
+    ui->toolButtonSaveSvg->setHidden(true);
+    ui->toolButtonLoadRemote->setHidden(true);
+    
+    // Show monitor button
+    ui->toolButtonConnect->setHidden(false);
+    
+    // Lock editing since we're monitor-only
+    lockEditing(true);
 }
 
 
@@ -1451,60 +1284,6 @@ void MainWindow::on_toolButtonLayout_clicked()
     }
     else{
         refreshNodesLayout( QtNodes::PortLayout::Horizontal );
-    }
-}
-
-void MainWindow::on_actionEditor_mode_triggered()
-{
-    _current_mode = GraphicMode::EDITOR;
-    updateCurrentMode();
-
-#ifdef ZMQ_FOUND
-    _monitor_widget->clear();
-#endif
-
-    _replay_widget->clear();
-}
-
-void MainWindow::on_actionMonitor_mode_triggered()
-{
-#ifdef ZMQ_FOUND
-    QMessageBox::StandardButton res = QMessageBox::Ok;
-
-    if( currentTabInfo()->scene()->nodes().size() > 0)
-    {
-        res = QMessageBox::warning(this, tr("Carefull!"),
-                                   tr("If you switch to Monitor Mode, "
-                                      "the current BehaviorTree in the Scene will be deleted"),
-                                   QMessageBox::Cancel | QMessageBox::Ok, QMessageBox::Cancel);
-    }
-    if( res == QMessageBox::Ok)
-    {
-        currentTabInfo()->clearScene();
-        _monitor_widget->clear();
-        _current_mode = GraphicMode::MONITOR;
-        updateCurrentMode();
-    }
-#endif
-}
-
-void MainWindow::on_actionReplay_mode_triggered()
-{
-    QMessageBox::StandardButton res = QMessageBox::Ok;
-
-    if( currentTabInfo()->scene()->nodes().size() > 0)
-    {
-        res = QMessageBox::warning(this, tr("Carefull!"),
-                                   tr("If you switch to Log Replay Mode, "
-                                      "the current BehaviorTree in the Scene will be deleted"),
-                                   QMessageBox::Cancel | QMessageBox::Ok, QMessageBox::Cancel);
-    }
-    if( res == QMessageBox::Ok)
-    {
-        onActionClearTriggered(true);
-        _replay_widget->clear();
-        _current_mode = GraphicMode::REPLAY;
-        updateCurrentMode();
     }
 }
 
@@ -1679,7 +1458,6 @@ void MainWindow::onTabRenameRequested(int tab_index, QString new_name)
         NodeModel model = { NodeType::SUBTREE, new_name, {}};
         onAddToModelRegistry( model );
         _treenode_models.insert( { new_name, model} );
-        _editor_widget->updateTreeView();
         this->onTreeNodeEdited(old_name, new_name);
     }
 
@@ -1721,7 +1499,6 @@ void MainWindow::clearTreeModels()
     {
         _model_registry->unregisterModel(ID);
     }
-    _editor_widget->updateTreeView();
 }
 
 const NodeModels &MainWindow::registeredModels() const

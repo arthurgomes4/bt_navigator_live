@@ -48,7 +48,7 @@ INCLUDE_DIRECTORIES(include ./QtNodeEditor/include ./)
 # Add QtNodeEditor subdirectory
 add_subdirectory(QtNodeEditor)
 
-# Source files for behavior tree editor
+# Source files for behavior tree monitor
 set(APP_CPPS
     ./bt_editor/models/BehaviorTreeNodeModel.cpp
     ./bt_editor/models/SubtreeNodeModel.cpp
@@ -57,10 +57,6 @@ set(APP_CPPS
     ./bt_editor/utils.cpp
     ./bt_editor/bt_editor_base.cpp
     ./bt_editor/graphic_container.cpp
-    ./bt_editor/startup_dialog.cpp
-    ./bt_editor/sidepanel_editor.cpp
-    ./bt_editor/sidepanel_replay.cpp
-    ./bt_editor/custom_node_dialog.cpp
     ./bt_editor/XML_utilities.cpp
 )
 
@@ -74,11 +70,6 @@ set(RESOURCE_FILES
 set(FORMS_UI
     ./bt_editor/about_dialog.ui
     ./bt_editor/mainwindow.ui
-    ./bt_editor/action_form.ui
-    ./bt_editor/sidepanel_editor.ui
-    ./bt_editor/sidepanel_replay.ui
-    ./bt_editor/startup_dialog.ui
-    ./bt_editor/custom_node_dialog.ui
 )
 
 # Optional ZMQ support for monitoring
@@ -96,7 +87,7 @@ endif()
 QT5_WRAP_UI(FORMS_HEADERS ${FORMS_UI})
 
 # Build libraries
-add_library(behavior_tree_editor SHARED
+add_library(behavior_tree_monitor SHARED
     ${APP_CPPS}
     ${FORMS_HEADERS}
 )
@@ -109,7 +100,7 @@ add_library(ros2_topic_logger SHARED
 SET(GROOT_DEPENDENCIES QtNodeEditor ncurses ncursesw tinfo)
 
 # Add ament dependencies
-ament_target_dependencies(behavior_tree_editor ${dependencies})
+ament_target_dependencies(behavior_tree_monitor ${dependencies})
 ament_target_dependencies(ros2_topic_logger ${dependencies})
 
 # Add ZMQ dependencies if found
@@ -123,7 +114,7 @@ if(ZMQ_FOUND)
 endif()
 
 # Link libraries
-target_link_libraries(behavior_tree_editor ${GROOT_DEPENDENCIES})
+target_link_libraries(behavior_tree_monitor ${GROOT_DEPENDENCIES})
 target_link_libraries(ros2_topic_logger ${GROOT_DEPENDENCIES})
 
 # Build executables
@@ -131,7 +122,7 @@ add_executable(Groot ./bt_editor/main.cpp ${RESOURCE_FILES})
 add_executable(test_ros2_topic_logger ./src/test_ros2_topic_logger.cpp)
 
 # Link executables
-target_link_libraries(Groot behavior_tree_editor)
+target_link_libraries(Groot behavior_tree_monitor)
 ament_target_dependencies(test_ros2_topic_logger
     rclcpp
     behaviortree_cpp_v3
@@ -140,7 +131,7 @@ ament_target_dependencies(test_ros2_topic_logger
 target_link_libraries(test_ros2_topic_logger ros2_topic_logger)
 
 # Installation
-INSTALL(TARGETS behavior_tree_editor LIBRARY DESTINATION lib)
+INSTALL(TARGETS behavior_tree_monitor LIBRARY DESTINATION lib)
 INSTALL(TARGETS ros2_topic_logger LIBRARY DESTINATION lib)
 INSTALL(TARGETS Groot RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(TARGETS
@@ -161,5 +152,5 @@ install(DIRECTORY launch/
 # Ament package configuration
 ament_export_include_directories(include)
 ament_export_dependencies(${GROOT_DEPENDENCIES} ${dependencies})
-ament_export_libraries(behavior_tree_editor ros2_topic_logger)
+ament_export_libraries(behavior_tree_monitor ros2_topic_logger)
 ament_package()

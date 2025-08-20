@@ -15,8 +15,6 @@
 
 #include "graphic_container.h"
 #include "XML_utilities.hpp"
-#include "sidepanel_editor.h"
-#include "sidepanel_replay.h"
 #include "models/SubtreeNodeModel.hpp"
 
 #include "rclcpp/rclcpp.hpp" 
@@ -115,12 +113,6 @@ public slots:
 
     void on_toolButtonLayout_clicked();
 
-    void on_actionEditor_mode_triggered();
-
-    void on_actionMonitor_mode_triggered();
-
-    void on_actionReplay_mode_triggered();
-
     void on_tabWidget_currentChanged(int index);
 
     void onActionClearTriggered(bool create_new);
@@ -205,8 +197,6 @@ private:
 
     QString _main_tree;
 
-    SidepanelEditor* _editor_widget;
-    SidepanelReplay* _replay_widget;
 #ifdef ZMQ_FOUND
     SidepanelMonitor* _monitor_widget;
 #endif
