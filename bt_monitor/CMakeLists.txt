@@ -118,11 +118,11 @@ target_link_libraries(behavior_tree_monitor ${GROOT_DEPENDENCIES})
 target_link_libraries(ros2_topic_logger ${GROOT_DEPENDENCIES})
 
 # Build executables
-add_executable(Groot ./bt_editor/main.cpp ${RESOURCE_FILES})
+add_executable(bt_monitor ./bt_editor/main.cpp ${RESOURCE_FILES})
 add_executable(test_ros2_topic_logger ./src/test_ros2_topic_logger.cpp)
 
 # Link executables
-target_link_libraries(Groot behavior_tree_monitor)
+target_link_libraries(bt_monitor behavior_tree_monitor)
 ament_target_dependencies(test_ros2_topic_logger
     rclcpp
     behaviortree_cpp_v3
@@ -133,7 +133,7 @@ target_link_libraries(test_ros2_topic_logger ros2_topic_logger)
 # Installation
 INSTALL(TARGETS behavior_tree_monitor LIBRARY DESTINATION lib)
 INSTALL(TARGETS ros2_topic_logger LIBRARY DESTINATION lib)
-INSTALL(TARGETS Groot RUNTIME DESTINATION lib/${PROJECT_NAME})
+INSTALL(TARGETS bt_monitor RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(TARGETS
     test_ros2_topic_logger
     DESTINATION lib/${PROJECT_NAME}
