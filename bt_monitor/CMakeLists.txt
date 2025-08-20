@@ -158,10 +158,16 @@ add_library(behavior_tree_editor SHARED
     ${FORMS_HEADERS}
 )
 
+# Add the ROS2TopicLogger library
+add_library(ros2_topic_logger SHARED
+    ./src/ros2_topic_logger.cpp
+)
+
 SET(GROOT_DEPENDENCIES QtNodeEditor ncurses ncursesw tinfo )
 
 if(ament_cmake_FOUND)
     ament_target_dependencies(behavior_tree_editor ${dependencies})
+    ament_target_dependencies(ros2_topic_logger ${dependencies})
 elseif( catkin_FOUND )
     SET(GROOT_DEPENDENCIES ${GROOT_DEPENDENCIES} ${catkin_LIBRARIES} )
 else()
@@ -178,11 +184,14 @@ if( ZMQ_FOUND )
 endif()
 
 target_link_libraries(behavior_tree_editor ${GROOT_DEPENDENCIES} )
+target_link_libraries(ros2_topic_logger ${GROOT_DEPENDENCIES} )
 
 add_executable(Groot ./bt_editor/main.cpp  ${RESOURCE_FILES})
 add_executable(send_full_bt ./src/send_full_bt.cpp)
 add_executable(bt_publisher ./src/bt_publisher.cpp)
 add_executable(test_zmq_publisher ./src/test_zmq_publisher.cpp)
+add_executable(test_ros2_topic_logger ./src/test_ros2_topic_logger.cpp)
+
 target_link_libraries(Groot behavior_tree_editor)
 ament_target_dependencies(send_full_bt rclcpp behaviortree_cpp_v3 std_msgs)
 ament_target_dependencies(bt_publisher rclcpp behaviortree_cpp_v3 std_msgs)
@@ -191,6 +200,12 @@ ament_target_dependencies(test_zmq_publisher
   behaviortree_cpp_v3
   std_msgs
 )
+ament_target_dependencies(test_ros2_topic_logger
+  rclcpp
+  behaviortree_cpp_v3
+  std_msgs
+)
+target_link_libraries(test_ros2_topic_logger ros2_topic_logger)
 
 ######################################################
 # INSTALL
@@ -209,16 +224,28 @@ else()
 endif()
 
 INSTALL(TARGETS behavior_tree_editor LIBRARY DESTINATION ${GROOT_LIB_DESTINATION} )
+INSTALL(TARGETS ros2_topic_logger LIBRARY DESTINATION ${GROOT_LIB_DESTINATION} )
 INSTALL(TARGETS Groot RUNTIME DESTINATION ${GROOT_BIN_DESTINATION} )
 install(TARGETS
   send_full_bt
   bt_publisher
   test_zmq_publisher
+  test_ros2_topic_logger
   DESTINATION lib/${PROJECT_NAME})  
+
+# Install header files
+install(DIRECTORY include/
+  DESTINATION include/
+)
+
+# Install launch files
+install(DIRECTORY launch/
+  DESTINATION share/${PROJECT_NAME}/launch
+)
 
 if(ament_cmake_FOUND)
   ament_export_include_directories(include)
   ament_export_dependencies(${GROOT_DEPENDENCIES} ${dependencies})
-  ament_export_libraries(behavior_tree_editor)
+  ament_export_libraries(behavior_tree_editor ros2_topic_logger)
   ament_package()
 endif()

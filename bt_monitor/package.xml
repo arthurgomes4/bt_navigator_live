@@ -27,8 +27,12 @@
   <build_depend>qttools5-dev-tools</build_depend>
   <build_depend>libdw-dev</build_depend>
   <build_depend>libzmq3-dev</build_depend>
+  <build_depend condition="$ROS_VERSION == 2">rclcpp</build_depend>
+  <build_depend condition="$ROS_VERSION == 2">std_msgs</build_depend>
 
   <exec_depend version_eq="3.8.0">behaviortree_cpp_v3</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">rclcpp</exec_depend>
+  <exec_depend condition="$ROS_VERSION == 2">std_msgs</exec_depend>
 
   <export>
     <build_type condition="$ROS_VERSION == 1">catkin</build_type>
