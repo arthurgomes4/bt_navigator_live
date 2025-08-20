@@ -47,9 +47,12 @@ SidepanelMonitor::SidepanelMonitor(QWidget *parent,
     connect( _timer, &QTimer::timeout, this, &SidepanelMonitor::on_timer );
 
     // Initialize ROS2 subscribers
+    // Full BT subscriber uses transient_local to receive latched messages
+    auto full_bt_qos = rclcpp::QoS(10).transient_local();
     full_bt_subscriber_ = _node_ptr->create_subscription<std_msgs::msg::ByteMultiArray>(
-        "/full_bt", 10, std::bind(&SidepanelMonitor::fullBtCallback, this, std::placeholders::_1));
+        "/full_bt", full_bt_qos, std::bind(&SidepanelMonitor::fullBtCallback, this, std::placeholders::_1));
 
+    // Updates subscriber uses default QoS for real-time updates
     bt_updates_subscriber_ = _node_ptr->create_subscription<std_msgs::msg::ByteMultiArray>(
         "/bt_updates", 10, std::bind(&SidepanelMonitor::btUpdatesCallback, this, std::placeholders::_1));
 }

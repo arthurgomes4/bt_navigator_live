@@ -17,8 +17,12 @@ ROS2TopicLogger::ROS2TopicLogger(
   active_server_(true),
   node_(node)
 {
-  // Create publishers
-  full_bt_publisher_ = node_->create_publisher<std_msgs::msg::ByteMultiArray>(full_tree_topic, 10);
+  // Create publishers with appropriate QoS settings
+  // Full BT topic uses transient_local to act as a latched topic
+  auto full_bt_qos = rclcpp::QoS(10).transient_local();
+  full_bt_publisher_ = node_->create_publisher<std_msgs::msg::ByteMultiArray>(full_tree_topic, full_bt_qos);
+  
+  // Updates topic uses default QoS for real-time updates
   updates_publisher_ = node_->create_publisher<std_msgs::msg::ByteMultiArray>(updates_topic, 10);
   
   // Create the timer
@@ -36,11 +40,8 @@ ROS2TopicLogger::ROS2TopicLogger(
 
   RCLCPP_INFO(node_->get_logger(), "ROS2TopicLogger: Tree buffer size: %zu bytes", tree_buffer_.size());
   
-  // Publish the tree structure multiple times to ensure Groot receives it
-  for (int i = 0; i < 3; i++) {
-    publishFullTree();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
+  // Publish the tree structure once - the latched topic will retain it for late subscribers
+  publishFullTree();
   
   createStatusBuffer();
   RCLCPP_INFO(node_->get_logger(), "ROS2TopicLogger: Initialized successfully");
@@ -75,11 +76,8 @@ void ROS2TopicLogger::setBT(const BT::Tree& tree)
   tree_buffer_.resize(builder.GetSize());
   memcpy(tree_buffer_.data(), builder.GetBufferPointer(), builder.GetSize());
 
-  // Publish the tree structure multiple times to ensure Groot receives it
-  for (int i = 0; i < 3; i++) {
-    publishFullTree();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
+  // Publish the tree structure once - the latched topic will retain it for late subscribers
+  publishFullTree();
   
   createStatusBuffer();
 }
