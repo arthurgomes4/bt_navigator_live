@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>bt_navigator_live</name>
+  <version>1.0.0</version>
+  <description>Monitored BT Navigator with live Groot monitoring support for Nav2</description>
+
+  <maintainer email="arthur@blackcoffeerobotics.com">Arthur</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>behaviortree_cpp_v3</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>nav2_behavior_tree</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_msgs</depend>
+  <depend>bt_monitor</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

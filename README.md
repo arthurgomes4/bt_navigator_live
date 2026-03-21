@@ -1,2 +1,2 @@
-# bt_navigator_pro
-Bringing back Groot live monitoring to Nav2 Behavior trees 
+# BT Navigator Live
+Bringing back Groot live monitoring to Nav2 Behavior Trees 

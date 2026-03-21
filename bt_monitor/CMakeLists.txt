@@ -90,11 +90,15 @@ SET(GROOT_DEPENDENCIES QtNodeEditor ncurses ncursesw tinfo)
 
 # Add ament dependencies
 ament_target_dependencies(behavior_tree_monitor ${dependencies})
-ament_target_dependencies(ros2_topic_logger ${dependencies})
+# ros2_topic_logger is general-purpose and only needs core BT dependencies
+ament_target_dependencies(ros2_topic_logger
+    behaviortree_cpp_v3
+    rclcpp
+    std_msgs
+)
 
 # Link libraries
 target_link_libraries(behavior_tree_monitor ${GROOT_DEPENDENCIES})
-target_link_libraries(ros2_topic_logger ${GROOT_DEPENDENCIES})
 
 # Build executables
 add_executable(bt_monitor ./bt_editor/main.cpp ${RESOURCE_FILES})
@@ -130,6 +134,7 @@ install(DIRECTORY launch/
 
 # Ament package configuration
 ament_export_include_directories(include)
-ament_export_dependencies(${GROOT_DEPENDENCIES} ${dependencies})
-ament_export_libraries(behavior_tree_monitor ros2_topic_logger)
+# Export only the minimal dependencies needed for ros2_topic_logger library
+ament_export_dependencies(behaviortree_cpp_v3 rclcpp std_msgs)
+ament_export_libraries(ros2_topic_logger)
 ament_package()

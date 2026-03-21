@@ -17,7 +17,19 @@ namespace bt_monitor
 
 /**
  * @class ROS2TopicLogger
- * @brief A behavior tree logger that publishes tree structure and status updates to ROS2 topics.
+ * @brief A general-purpose behavior tree logger that publishes to ROS2 topics
+ * 
+ * This logger is designed to work with any BehaviorTree.CPP v3 behavior tree
+ * and publishes serialized tree structure and status updates to ROS2 topics
+ * in a format compatible with Groot monitoring tools.
+ * 
+ * The logger publishes:
+ * - Full tree structure (latched) - Published once when tree is created
+ * - Status updates - Real-time updates of node state changes
+ * 
+ * This is a standalone, general-purpose component that can be used independently
+ * of any specific application (Nav2, etc.). Simply instantiate it with your tree
+ * and it will handle all the monitoring communication.
  * 
  * This logger publishes the full behavior tree structure to one topic and status updates to another.
  * It can be used to monitor the execution of a behavior tree in real-time.
